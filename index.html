@@ -1,924 +1,935 @@
 <!DOCTYPE html>
-<html lang="cs" class="scroll-smooth">
+<html lang="cs" class="dark scroll-smooth h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GREEN MOVEMENT - Hýbej se pro přírodu | Gamifikovaná Plogging Aplikace</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GREEN MOVEMENT — Běhej, sbírej odpadky a odkrývej Česko</title>
+
+    <!-- PWA Primary Meta Tags -->
+    <meta name="theme-color" content="#06130E">
+    <meta name="description" content="Ultimátní gamifikovaná ploggingová aplikace. Hýbej se pro přírodu, sbírej odpadky, odkrývej Fog of War mapu ČR a získávej odznaky a odměny.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdyZWVuIE1vdmVtZW50IiwKICAic2hvcnRfbmFtZSI6ICJHcmVlbk1vdiIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDYxMzBFIiwKICAidGhlbWVfY29sb3IiOiAiIzEwQjk4MSIKfQ==">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            dark: '#1b4332',
-                            primary: '#2d6a4f',
-                            medium: '#40916c',
-                            light: '#52b788',
-                            soft: '#74c69d',
-                            accent: '#e9c46a',
-                            cream: '#f0f4f1',
-                            bgLight: '#f8f9fa'
+                            emerald: '#10B981',
+                            lime: '#84CC16',
+                            bgDark: '#06130E',
+                            bgPanel: '#0B1E17',
+                            amber: '#F59E0B',
+                            turq: '#06B6D4',
+                            borderGlow: 'rgba(16, 185, 129, 0.25)'
                         }
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif']
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'rotate(0deg)' },
+                            '20%': { transform: 'rotate(-8deg) scale(1.05)' },
+                            '40%': { transform: 'rotate(8deg) scale(1.08)' },
+                            '60%': { transform: 'rotate(-5deg) scale(1.1)' },
+                            '80%': { transform: 'rotate(5deg) scale(1.12)' },
+                        },
+                        glowPulse: {
+                            '0%, 100%': { opacity: '0.6', filter: 'drop-shadow(0 0 15px rgba(16, 185, 129, 0.4))' },
+                            '50%': { opacity: '1', filter: 'drop-shadow(0 0 30px rgba(132, 204, 22, 0.8))' }
+                        }
+                    },
+                    animation: {
+                        shake: 'shake 1.2s ease-in-out infinite',
+                        glowPulse: 'glowPulse 2s ease-in-out infinite'
                     }
                 }
             }
         }
     </script>
-    <!-- Google Fonts -->
+
+    <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Canvas Confetti Library -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Leaflet JS & CSS for Fog of War Interactive Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Canvas Confetti CDN -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- FontAwesome 6 Pro CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+    <!-- Custom Next-Gen Glassmorphic Styling -->
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.94);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(229, 231, 235, 0.8);
+        body { font-family: 'Inter', sans-serif; background-color: #06130E; color: #E2E8F0; }
+        h1, h2, h3, h4, .font-heading { font-family: 'Outfit', sans-serif; }
+        .glass-panel {
+            background: rgba(11, 30, 23, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
         }
-        .dark-glass-card {
-            background: rgba(27, 67, 50, 0.96);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(82, 183, 136, 0.25);
+        .glass-panel-glow {
+            background: rgba(11, 30, 23, 0.90);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
         }
         /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f8f9fa; }
-        ::-webkit-scrollbar-thumb { background: #2d6a4f; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #1b4332; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #06130E; }
+        ::-webkit-scrollbar-thumb { background: #10B981; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #84CC16; }
+        .fog-grid-overlay {
+            background-image: radial-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
     </style>
 </head>
-<body class="bg-brand-bgLight text-slate-800 antialiased selection:bg-brand-medium selection:text-white">
+<body class="bg-brand-bgDark text-slate-100 flex flex-col min-h-screen selection:bg-brand-emerald selection:text-black">
 
-    <!-- REUSABLE SVG LOGO FALLBACK TEMPLATE -->
     <svg style="display: none;">
         <defs>
             <g id="gm-official-logo">
-                <!-- Runner & Leaf Composite Visual -->
-                <path d="M 20 45 C 35 20, 65 15, 85 25 C 70 45, 45 50, 20 45 Z" fill="#52b788"/>
-                <circle cx="30" cy="22" r="6" fill="#1b4332"/>
-                <path d="M 20 38 Q 30 32 40 38 L 48 52 Q 35 55 25 45 Z" fill="#1b4332"/>
-                <path d="M 45 42 L 65 58 L 58 64 L 40 48 Z" fill="#d4a373"/>
-                <!-- Trash bag -->
-                <path d="M 58 62 C 52 68, 50 82, 62 86 C 74 88, 78 76, 72 66 Z" fill="#b08968"/>
-                <!-- Typography -->
-                <text x="95" y="42" font-family="'Inter', sans-serif" font-weight="900" font-size="28" fill="#1b4332" letter-spacing="1">GREEN</text>
-                <text x="95" y="68" font-family="'Inter', sans-serif" font-weight="900" font-size="28" fill="#1b4332" letter-spacing="1">MOVEMENT</text>
-                <text x="96" y="86" font-family="'Inter', sans-serif" font-weight="600" font-size="12" fill="#2d6a4f" letter-spacing="2">HÝBEJ SE PRO PŘÍRODU</text>
+                <path d="M 20 45 C 35 20, 65 15, 85 25 C 70 45, 45 50, 20 45 Z" fill="#10B981"/>
+                <circle cx="30" cy="22" r="6" fill="#84CC16"/>
+                <path d="M 20 38 Q 30 32 40 38 L 48 52 Q 35 55 25 45 Z" fill="#0B1E17"/>
+                <path d="M 45 42 L 65 58 L 58 64 L 40 48 Z" fill="#F59E0B"/>
+                <path d="M 58 62 C 52 68, 50 82, 62 86 C 74 88, 78 76, 72 66 Z" fill="#D4A373"/>
+                <text x="95" y="42" font-family="'Outfit', sans-serif" font-weight="900" font-size="28" fill="#10B981" letter-spacing="1">GREEN</text>
+                <text x="95" y="68" font-family="'Outfit', sans-serif" font-weight="900" font-size="28" fill="#FFFFFF" letter-spacing="1">MOVEMENT</text>
+                <text x="96" y="86" font-family="'Inter', sans-serif" font-weight="700" font-size="12" fill="#84CC16" letter-spacing="2">HÝBEJ SE PRO PŘÍRODU</text>
             </g>
         </defs>
     </svg>
 
-    <!-- NAVIGATION HEADER -->
-    <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+    <header class="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
             
-            <!-- Logo Section with User Provided Image -->
-            <a href="#" class="flex items-center gap-3 group">
+            <!-- Brand Logo -->
+            <a href="#home" onclick="showTab('home')" class="flex items-center gap-3 group shrink-0">
                 <img src="image_e35d91.png" 
-                     onerror="this.onerror=null; this.outerHTML='<svg class=\'h-12 w-auto object-contain transition-transform group-hover:scale-105\' viewBox=\'0 0 420 100\'><use href=\'#gm-official-logo\'/></svg>';" 
-                     alt="GREEN MOVEMENT - Hýbej se pro přírodu" 
-                     class="h-12 w-auto object-contain transition-transform group-hover:scale-105">
+                     onerror="this.onerror=null; this.outerHTML='<svg class=\'h-10 w-auto object-contain transition-transform group-hover:scale-105\' viewBox=\'0 0 420 100\'><use href=\'#gm-official-logo\'/></svg>';" 
+                     alt="GREEN MOVEMENT" class="h-10 w-auto object-contain transition-transform group-hover:scale-105">
             </a>
+
+            <!-- Desktop Navigation Links -->
+            <nav class="hidden lg:flex items-center gap-6 text-sm font-semibold text-slate-300">
+                <button onclick="showTab('home')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-house"></i> Přehled</button>
+                <button onclick="showTab('track')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-person-running"></i> Aktivita</button>
+                <button onclick="showTab('map')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-map-location-dot"></i> Mapa ČR</button>
+                <button onclick="showTab('events')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-calendar-check"></i> Události</button>
+                <button onclick="showTab('leaderboard')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-trophy"></i> Žebříčky</button>
+                <button onclick="showTab('shop')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-store"></i> Obchod</button>
+                <button onclick="showTab('achievements')" class="hover:text-brand-emerald transition-colors flex items-center gap-1.5"><i class="fa-solid fa-award"></i> Úspěchy (150)</button>
+            </nav>
+
+            <!-- Currency & VIP Dev Cheat Panel Toggle -->
+            <div class="flex items-center gap-3">
+                
+                <!-- Green Coins Counter -->
+                <div class="glass-panel px-3 py-1.5 rounded-full flex items-center gap-2 border border-amber-500/30 text-amber-400 font-bold text-xs sm:text-sm">
+                    <i class="fa-solid fa-coins text-amber-400 animate-pulse"></i>
+                    <span id="user-coins-display">100 000</span>
+                    <span class="text-[10px] text-amber-500 uppercase font-black">Coins</span>
+                </div>
+
+                <!-- XP & Prestige Badge -->
+                <div class="hidden sm:flex items-center gap-2 glass-panel px-3 py-1.5 rounded-full border border-brand-emerald/30 text-xs font-bold text-brand-emerald">
+                    <i class="fa-solid fa-star text-brand-lime"></i>
+                    <span id="user-xp-display">50 000 XP</span>
+                    <span id="user-prestige-tag" class="bg-amber-500/20 text-amber-300 text-[10px] px-2 py-0.5 rounded-md border border-amber-500/40 font-black">PRESTIGE I</span>
+                </div>
+
+                <!-- Developer Cheat / Testing Modal Button -->
+                <button onclick="toggleDevCheatModal()" class="bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/50 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i>
+                    <span class="hidden md:inline">Testovací Účet + Peníze</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8 mb-24 lg:mb-12">
+
+        <!-- TAB 1: DOMŮ / MŮJ PROFIL -->
+        <section id="tab-home" class="tab-content space-y-6">
             
-            <div class="hidden lg:flex items-center gap-7 text-sm font-semibold text-slate-700">
-                <a href="#proctodelame" class="hover:text-brand-primary transition-colors">O projektu</a>
-                <a href="#simulace" class="hover:text-brand-primary transition-colors">Aplikace</a>
-                <a href="#kalkulacka" class="hover:text-brand-primary transition-colors">Kalkulačka XP</a>
-                <a href="#gamifikace" class="hover:text-brand-primary transition-colors">Levely & Odznaky</a>
-                <a href="#zebricek" class="hover:text-brand-primary transition-colors">Žebříček</a>
-                <a href="#mesta" class="hover:text-brand-primary transition-colors">Pro Města</a>
+            <!-- User Profile Header Card -->
+            <div class="glass-panel-glow rounded-3xl p-6 sm:p-8 relative overflow-hidden">
+                <!-- Background Banner Accent -->
+                <div class="absolute top-0 right-0 w-96 h-96 bg-brand-emerald/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+                    <div class="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+                        
+                        <!-- Avatar with Legendary Frame -->
+                        <div class="relative group cursor-pointer" onclick="showTab('shop')">
+                            <div class="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-brand-lime via-brand-emerald to-amber-400 shadow-xl shadow-brand-emerald/20">
+                                <img id="user-avatar-img" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300" 
+                                     alt="Profilový avatar" class="w-full h-full rounded-full object-cover">
+                            </div>
+                            <span class="absolute -bottom-1 -right-1 bg-amber-400 text-black text-xs font-black px-2 py-0.5 rounded-full shadow-lg border border-black">
+                                LvL 42
+                            </span>
+                        </div>
+
+                        <div class="space-y-1">
+                            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                                <h1 class="text-2xl sm:text-3xl font-black text-white" id="user-profile-name">Jan "Plogger" Novák</h1>
+                                <span class="bg-brand-emerald/20 text-brand-lime text-xs font-bold px-3 py-1 rounded-full border border-brand-emerald/40">
+                                    ✨ ŽIVOUCÍ LEGENDA ✨
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400 font-medium">@jan_plogger_cz • Město: Praha & Zlín • Člen od roku 2026</p>
+                            <p class="text-xs text-slate-300 italic pt-1 max-w-lg">
+                                "Každý run je příležitost nechat české lesy a parky čistší než byly ráno. Plogging mě baví!"
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Action Quick Buttons -->
+                    <div class="flex flex-wrap items-center justify-center gap-3 w-full md:w-auto">
+                        <button onclick="showTab('track')" class="w-full sm:w-auto bg-brand-emerald hover:bg-emerald-600 text-black font-black px-6 py-3.5 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-play"></i> Zahájit Plogging
+                        </button>
+                        <button onclick="toggleDevCheatModal()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-white font-bold px-5 py-3.5 rounded-2xl border border-slate-700 text-sm flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wallet text-amber-400"></i> Spravovat Testovací Konto
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Level & XP Progress Engine -->
+                <div class="mt-8 pt-6 border-t border-slate-800/80 space-y-2">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span class="text-slate-400">Level 42 Progress (Postup do Levelu 43)</span>
+                        <span class="text-brand-lime font-mono">50 000 / 68 500 XP (73%)</span>
+                    </div>
+                    <div class="w-full h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-800 p-0.5">
+                        <div class="h-full bg-gradient-to-r from-brand-emerald via-brand-lime to-amber-400 rounded-full transition-all duration-700 shadow-md" style="width: 73%;"></div>
+                    </div>
+                </div>
             </div>
 
-            <div class="flex items-center gap-3">
-                <a href="#simulace" class="bg-brand-primary hover:bg-brand-dark text-white font-bold px-5 py-2.5 rounded-full shadow-md shadow-brand-primary/20 transition-all hover:scale-105 active:scale-95 text-xs sm:text-sm flex items-center gap-2">
-                    <span>📱</span> Vyzkoušet Demo
-                </a>
+            <!-- Dashboard Key Performance Stats Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-1">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>Užitá vzdálenost</span>
+                        <i class="fa-solid fa-route text-brand-emerald text-base"></i>
+                    </div>
+                    <p class="text-2xl font-black text-white">142.8 <span class="text-xs text-slate-400">km</span></p>
+                    <p class="text-[10px] text-brand-lime font-medium">+12.4 km tento týden</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-1">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>Sebrané pytle</span>
+                        <i class="fa-solid fa-trash-can text-brand-lime text-base"></i>
+                    </div>
+                    <p class="text-2xl font-black text-white">86 <span class="text-xs text-slate-400">pytlů</span></p>
+                    <p class="text-[10px] text-brand-lime font-medium">Cca 1 720 litrů odpadu</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-1">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>Aktivní Série (Streak)</span>
+                        <i class="fa-solid fa-fire text-amber-500 text-base animate-bounce"></i>
+                    </div>
+                    <p class="text-2xl font-black text-amber-400">12 <span class="text-xs text-slate-400">dní</span></p>
+                    <p class="text-[10px] text-slate-400 font-medium">Osobní rekord: 30 dní</p>
+                </div>
+
+                <div class="glass-panel p-5 rounded-2xl border border-slate-800/80 space-y-1">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-semibold">
+                        <span>Odkrytá Mapa ČR</span>
+                        <i class="fa-solid fa-map text-brand-turq text-base"></i>
+                    </div>
+                    <p class="text-2xl font-black text-brand-turq">1.45 <span class="text-xs text-slate-400">%</span></p>
+                    <p class="text-[10px] text-slate-400 font-medium">3 kraje & 12 okresů</p>
+                </div>
             </div>
+
+            <!-- Daily & Weekly Quests Module -->
+            <div class="glass-panel p-6 rounded-3xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-list-check text-brand-emerald text-xl"></i>
+                        <h2 class="text-xl font-bold text-white">Denní & Týdenní Plogging Výzvy</h2>
+                    </div>
+                    <span class="text-xs text-slate-400">Reset za: 14 hodin</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-white">Uběhni nebo ujdi 3 km</span>
+                            <span class="text-amber-400">+100 XP / 50 Coins</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                            <div class="h-full bg-brand-emerald" style="width: 100%;"></div>
+                        </div>
+                        <span class="text-[10px] text-brand-lime font-bold">✓ Splněno • Odměna vyzvednuta</span>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-white">Vyfoť 2 naplněné pytle</span>
+                            <span class="text-amber-400">+250 XP / 100 Coins</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                            <div class="h-full bg-brand-lime" style="width: 50%;"></div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-bold">1 / 2 pytlů odevzdáno</span>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="flex justify-between text-xs font-bold">
+                            <span class="text-white">Odkryj 1 nový sektor ČR</span>
+                            <span class="text-amber-400">+300 XP / Stříbrná Bednička</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden">
+                            <div class="h-full bg-brand-turq" style="width: 0%;"></div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-bold">Neodkryto</span>
+                    </div>
+
+                </div>
+            </div>
+
+        </section>
+
+        <section id="tab-track" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <i class="fa-solid fa-person-running text-brand-emerald"></i>
+                            Sledování Plogging Aktivity
+                        </h2>
+                        <p class="text-xs text-slate-400">Nahrávej trasu přes GPS nebo importuj ze Stravy a Garminu.</p>
+                    </div>
+
+                    <!-- Strava & Garmin Quick Import Button -->
+                    <button onclick="triggerStravaImportSim()" class="bg-[#FC4C02] hover:bg-[#E04300] text-white font-bold px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 shadow-lg transition-all">
+                        <i class="fa-solid fa-arrows-rotate"></i> Importovat ze Stravy / Garmin
+                    </button>
+                </div>
+
+                <!-- Live Track Simulation Panel -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    
+                    <!-- GPS Map Canvas Simulation -->
+                    <div class="lg:col-span-8 bg-slate-950 rounded-2xl border border-slate-800 h-80 relative overflow-hidden flex flex-col justify-between p-4">
+                        <div id="activityMapSim" class="absolute inset-0 z-0 fog-grid-overlay bg-slate-950"></div>
+                        
+                        <div class="relative z-10 flex justify-between items-start">
+                            <div class="bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 text-xs font-bold space-y-0.5">
+                                <p class="text-slate-400">Aktivní GPS Trasa: <span id="track-gps-status" class="text-brand-lime">Připojeno</span></p>
+                                <p class="text-white text-lg font-black" id="track-dist-val">3.40 km</p>
+                            </div>
+                            <div class="bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-800 text-xs font-bold text-right space-y-0.5">
+                                <p class="text-slate-400">Čas trvání</p>
+                                <p class="text-brand-lime text-lg font-black" id="track-timer-val">00:28:15</p>
+                            </div>
+                        </div>
+
+                        <div class="relative z-10 bg-slate-900/90 backdrop-blur-md p-3 rounded-xl border border-slate-800 flex items-center justify-between text-xs font-semibold">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-brand-emerald animate-ping"></span>
+                                <span>Odhadovaný Zisk: <strong id="track-xp-est" class="text-brand-lime">+218 XP</strong> & <strong id="track-coins-est" class="text-amber-400">+68 Coins</strong></span>
+                            </div>
+                            <span class="text-slate-400 text-[10px]">Rychlost: 8.2 km/h (Vyhovuje limitu)</span>
+                        </div>
+                    </div>
+
+                    <!-- Camera & Litter Form Controls -->
+                    <div class="lg:col-span-4 glass-panel p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-camera text-brand-lime"></i> Vyfotit a Přidat Pytel Odpadu
+                            </h3>
+
+                            <!-- Bag Size Selector -->
+                            <div class="space-y-2">
+                                <label class="text-xs font-medium text-slate-400">Velikost odevzdaného pytle:</label>
+                                <select id="bag-size-select" onchange="recalculateTrackRewards()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white font-bold focus:border-brand-emerald outline-none">
+                                    <option value="small">🛍️ Malá Taška (10–20 l) — +30 XP / 15 Coins</option>
+                                    <option value="medium" selected>🗑️ Standardní Pytel (60 l) — +100 XP / 50 Coins</option>
+                                    <option value="large">📦 Velký Pytel (120 l) — +200 XP / 100 Coins</option>
+                                    <option value="hazard">⚠️ Nadrozměrný / Elektro / Pneu — +150 XP bonus</option>
+                                </select>
+                            </div>
+
+                            <!-- Waste Category Checklist -->
+                            <div class="space-y-2">
+                                <label class="text-xs font-medium text-slate-400">Druhy sebraného odpadu:</label>
+                                <div class="grid grid-cols-2 gap-2 text-xs">
+                                    <label class="flex items-center gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                                        <input type="checkbox" checked class="accent-brand-emerald"> Plasty & PET
+                                    </label>
+                                    <label class="flex items-center gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                                        <input type="checkbox" checked class="accent-brand-emerald"> Plechovky & Kovy
+                                    </label>
+                                    <label class="flex items-center gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                                        <input type="checkbox" class="accent-brand-emerald"> Sklo & Střepy
+                                    </label>
+                                    <label class="flex items-center gap-2 bg-slate-900/60 p-2 rounded-lg border border-slate-800 cursor-pointer">
+                                        <input type="checkbox" class="accent-brand-emerald"> Nedopalky
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="space-y-2 pt-2">
+                            <button onclick="simulatePhotoCapture()" class="w-full bg-brand-emerald hover:bg-emerald-600 text-black font-black py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-camera"></i> Vyfotit Pytel (+ Odeslat fotku)
+                            </button>
+                            <button onclick="finishActivityAndAward()" class="w-full bg-brand-lime hover:bg-lime-500 text-black font-black py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-check-double"></i> Dokončit a Získat Odměny
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-map" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <i class="fa-solid fa-map-location-dot text-brand-turq"></i>
+                            Interaktivní Mapa ČR — Fog of War
+                        </h2>
+                        <p class="text-xs text-slate-400">Odkrývej zmlženou mapu Česka svým pohybem a sběrem odpadu.</p>
+                    </div>
+
+                    <!-- Map Layers Selector -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="toggleMapLayer('fog')" class="bg-brand-emerald/20 border border-brand-emerald text-brand-emerald px-3 py-1.5 rounded-xl text-xs font-bold">
+                            <i class="fa-solid fa-eye"></i> Fog of War
+                        </button>
+                        <button onclick="toggleMapLayer('dumps')" class="bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold">
+                            <i class="fa-solid fa-dumpster"></i> Černé skládky
+                        </button>
+                        <button onclick="toggleMapLayer('events')" class="bg-slate-900 border border-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold">
+                            <i class="fa-solid fa-users"></i> Akce
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Leaflet Map Container -->
+                <div id="leafletMap" class="w-full h-[500px] rounded-2xl border border-slate-800 z-10 relative"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-xs text-slate-400">Odkryto v ČR</span>
+                        <p class="text-lg font-black text-brand-turq">1.45 % (114 km²)</p>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-xs text-slate-400">Aktivní Okresy</span>
+                        <p class="text-lg font-black text-brand-lime">12 ze 77 okresů</p>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-center">
+                        <span class="text-xs text-slate-400">Moje Špendlíky</span>
+                        <p class="text-lg font-black text-amber-400">8 uložených míst</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-events" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <i class="fa-solid fa-calendar-check text-brand-emerald"></i>
+                            Komunitní Úklidy, Školní & Firemní Ligy
+                        </h2>
+                        <p class="text-xs text-slate-400">Zapoj se do společných akcí s 1.5× násobičem XP nebo zorganizuj vlastní.</p>
+                    </div>
+                    <button onclick="alert('Modul pro vytvoření nové komunitní akce otevřen. Vyberte datum a místo na mapě.')" class="bg-brand-emerald hover:bg-emerald-600 text-black font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 shadow-lg transition-all">
+                        <i class="fa-solid fa-plus"></i> Vytvořit Novou Akci
+                    </button>
+                </div>
+
+                <!-- Active Events Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <!-- Event 1 -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-3 relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-brand-emerald/20 text-brand-emerald text-[10px] font-bold px-2.5 py-1 rounded-full border border-brand-emerald/30">
+                                ⚡ 1.5× XP MULTIPLIER
+                            </span>
+                            <span class="text-xs text-slate-400 font-mono">Sobota 24.10.2026 • 09:00</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Velký Jarní Úklid Stromovky — Praha 7</h3>
+                        <p class="text-xs text-slate-300">Společný sraz ploggerů a rodin s dětmi. Pytle a rukavice zajištěny na místě.</p>
+                        <div class="flex items-center justify-between pt-2 text-xs">
+                            <span class="text-slate-400"><i class="fa-solid fa-users text-brand-lime"></i> 24 přihlášených</span>
+                            <button onclick="alert('Byl jste úspěšně přihlášen na akci!')" class="bg-brand-lime hover:bg-lime-500 text-black font-bold px-4 py-1.5 rounded-xl transition-all">
+                                Připojit Se
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Event 2 -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 space-y-3 relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-500/30">
+                                🏫 ŠKOLNÍ LIGA
+                            </span>
+                            <span class="text-xs text-slate-400 font-mono">Středa 28.10.2026 • 14:00</span>
+                        </div>
+                        <h3 class="text-lg font-bold text-white">Eko-Soutěž Středních Škol Zlínského Kraje</h3>
+                        <p class="text-xs text-slate-300">Meziškolní turnaj v počtu nasbíraných litrů odpadu se sponzorskými cenami.</p>
+                        <div class="flex items-center justify-between pt-2 text-xs">
+                            <span class="text-slate-400"><i class="fa-solid fa-school text-brand-turq"></i> 12 zapojených škol</span>
+                            <button onclick="alert('Registrace školy do ligy odeslána.')" class="bg-brand-emerald hover:bg-emerald-600 text-black font-bold px-4 py-1.5 rounded-xl transition-all">
+                                Detail Ligy
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-leaderboard" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <i class="fa-solid fa-trophy text-amber-400"></i>
+                            Žebříčky Ploggerů ČR & Síň Slávy
+                        </h2>
+                        <p class="text-xs text-slate-400">Porovnávej své výkony podle času, krajů, měst, škol či týmů.</p>
+                    </div>
+
+                    <!-- Leaderboard Filter Tabs -->
+                    <div class="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
+                        <button onclick="filterLeaderboard('week', this)" class="lb-tab bg-brand-emerald text-black px-4 py-1.5 rounded-xl transition-all">Tento Týden</button>
+                        <button onclick="filterLeaderboard('month', this)" class="lb-tab text-slate-400 hover:text-white px-4 py-1.5 rounded-xl transition-all">Tento Měsíc</button>
+                        <button onclick="filterLeaderboard('all', this)" class="lb-tab text-slate-400 hover:text-white px-4 py-1.5 rounded-xl transition-all">Celkově</button>
+                    </div>
+                </div>
+
+                <!-- Leaderboard Table Container -->
+                <div class="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
+                    <div class="p-4 bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 grid grid-cols-12 gap-2">
+                        <span class="col-span-1 text-center">#</span>
+                        <span class="col-span-5">Plogger / Hráč</span>
+                        <span class="col-span-3 text-center">Pytle / Vzdálenost</span>
+                        <span class="col-span-3 text-right">Celkové XP</span>
+                    </div>
+
+                    <div id="leaderboard-rows-container" class="divide-y divide-slate-800/60 text-sm font-medium">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-shop" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <i class="fa-solid fa-store text-amber-400"></i>
+                            Obchod & Eko-Bedničky (Loot Boxy)
+                        </h2>
+                        <p class="text-xs text-slate-400">Otevírej bedničky za Green Coins a získej 200+ kosmetických rámečků, titulů a bannerů.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleDevCheatModal()" class="bg-amber-500/20 border border-amber-500 text-amber-300 font-bold px-3 py-1.5 rounded-xl text-xs">
+                            + Pridat 100 000 Coins na Test
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Loot Box Tiers Display -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    
+                    <!-- Tier 1: Bronzová -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-amber-900/40 text-center space-y-4 relative group hover:border-amber-700 transition-all">
+                        <div class="w-20 h-20 mx-auto rounded-2xl bg-amber-900/30 border-2 border-amber-800 flex items-center justify-center text-3xl animate-pulse">
+                            🟤
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Bronzová Eko-Bednička</h3>
+                            <p class="text-[11px] text-slate-400">Běžné rámečky a základní tituly.</p>
+                        </div>
+                        <button onclick="triggerUnboxing('Bronzová', 100)" class="w-full bg-amber-800 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                            <span>Otevřít</span>
+                            <span class="bg-black/40 px-2 py-0.5 rounded text-amber-300">100 🪙</span>
+                        </button>
+                    </div>
+
+                    <!-- Tier 2: Stříbrná -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-700 text-center space-y-4 relative group hover:border-slate-500 transition-all">
+                        <div class="w-20 h-20 mx-auto rounded-2xl bg-slate-800/50 border-2 border-slate-500 flex items-center justify-center text-3xl">
+                            🔵
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Stříbrná Krystalová</h3>
+                            <p class="text-[11px] text-slate-400">Vzácné tituly a lesní bannery.</p>
+                        </div>
+                        <button onclick="triggerUnboxing('Stříbrná', 250)" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                            <span>Otevřít</span>
+                            <span class="bg-black/40 px-2 py-0.5 rounded text-amber-300">250 🪙</span>
+                        </button>
+                    </div>
+
+                    <!-- Tier 3: Zlatá -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-amber-500/50 text-center space-y-4 relative group hover:border-amber-400 transition-all">
+                        <div class="w-20 h-20 mx-auto rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center text-3xl animate-bounce">
+                            🟡
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Zlatá Smaragdová</h3>
+                            <p class="text-[11px] text-slate-400">Epické animované efekty a tituly.</p>
+                        </div>
+                        <button onclick="triggerUnboxing('Zlatá', 600)" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-black py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                            <span>Otevřít</span>
+                            <span class="bg-black/20 px-2 py-0.5 rounded text-black">600 🪙</span>
+                        </button>
+                    </div>
+
+                    <!-- Tier 4: Diamantová -->
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-brand-emerald/60 text-center space-y-4 relative group hover:border-brand-lime transition-all">
+                        <div class="w-20 h-20 mx-auto rounded-2xl bg-brand-emerald/20 border-2 border-brand-lime flex items-center justify-center text-3xl animate-pulse">
+                            💎
+                        </div>
+                        <div>
+                            <h3 class="text-base font-bold text-white">Diamantová Gaia</h3>
+                            <p class="text-[11px] text-slate-400">Legendární animované rámečky & svatozáře.</p>
+                        </div>
+                        <button onclick="triggerUnboxing('Diamantová Gaia', 1500)" class="w-full bg-gradient-to-r from-brand-emerald to-brand-lime hover:opacity-90 text-black font-black py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2">
+                            <span>Otevřít</span>
+                            <span class="bg-black/30 px-2 py-0.5 rounded text-black">1 500 🪙</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-achievements" class="tab-content hidden space-y-6">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                    <div>
+                        <h2 class="text-2xl font-black text-white flex items-center gap-3">
+                            <i class="fa-solid fa-award text-brand-lime"></i>
+                            Katalog 150 Originálních Úspěchů (Achievements)
+                        </h2>
+                        <p class="text-xs text-slate-400">Kompletní přehled všech 150 výzev rozdělených do 10 kategorií.</p>
+                    </div>
+                    <span class="text-xs text-brand-lime font-bold bg-brand-emerald/20 px-3 py-1 rounded-full border border-brand-emerald/30">
+                        Odemčeno: 48 / 150
+                    </span>
+                </div>
+
+                <!-- Category Filters -->
+                <div class="flex flex-wrap gap-2 text-xs font-bold" id="achievement-cat-filters">
+                    <button onclick="filterAchievements('all')" class="bg-brand-emerald text-black px-3 py-1.5 rounded-xl">Vše (150)</button>
+                    <button onclick="filterAchievements('dist')" class="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl">🏃 Vzdálenost (1–20)</button>
+                    <button onclick="filterAchievements('bags')" class="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl">🗑️ Sběr Odpadu (21–40)</button>
+                    <button onclick="filterAchievements('streaks')" class="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl">📅 Streaks (41–55)</button>
+                    <button onclick="filterAchievements('map')" class="bg-slate-900 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-xl">🗺️ Mapa ČR (56–75)</button>
+                </div>
+
+                <!-- Achievements Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="achievements-catalog-grid">
+                    <!-- JavaScript populated achievements -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-40 lg:hidden glass-panel border-t border-slate-800/80 px-2 py-2">
+        <div class="grid grid-cols-5 text-center text-[10px] font-bold">
+            <button onclick="showTab('home')" class="py-1 text-brand-emerald flex flex-col items-center gap-0.5">
+                <i class="fa-solid fa-house text-base"></i> Prehled
+            </button>
+            <button onclick="showTab('track')" class="py-1 text-slate-400 hover:text-white flex flex-col items-center gap-0.5">
+                <i class="fa-solid fa-person-running text-base"></i> Aktivita
+            </button>
+            <button onclick="showTab('map')" class="py-1 text-slate-400 hover:text-white flex flex-col items-center gap-0.5">
+                <i class="fa-solid fa-map-location-dot text-base"></i> Mapa
+            </button>
+            <button onclick="showTab('leaderboard')" class="py-1 text-slate-400 hover:text-white flex flex-col items-center gap-0.5">
+                <i class="fa-solid fa-trophy text-base"></i> Žebříček
+            </button>
+            <button onclick="showTab('shop')" class="py-1 text-slate-400 hover:text-white flex flex-col items-center gap-0.5">
+                <i class="fa-solid fa-store text-base"></i> Obchod
+            </button>
         </div>
     </nav>
 
-    <!-- HERO SECTION WITH LIVE PHONE SIMULATOR -->
-    <section class="relative pt-28 pb-20 md:pt-36 md:pb-28 overflow-hidden bg-gradient-to-b from-emerald-50/60 via-brand-cream to-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                
-                <!-- Left Column: Copywriting -->
-                <div class="lg:col-span-6 space-y-6 text-center lg:text-left">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100/90 border border-emerald-300 text-brand-dark text-xs sm:text-sm font-bold">
-                        <span class="flex h-2.5 w-2.5 rounded-full bg-brand-light animate-ping"></span>
-                        První česká gamifikovaná plogging aplikace
-                    </div>
-
-                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-brand-dark tracking-tight leading-none">
-                        HÝBEJ SE PRO PŘÍRODU
-                    </h1>
-
-                    <p class="text-lg text-slate-600 max-w-2xl leading-relaxed mx-auto lg:mx-0 font-normal">
-                        Změň každodenní běh či procházku ve smysluplnou misi. Sbírej odpadky v českých parcích, lesích a městech, získávej XP body, dosahuj nových levelů a bav se čištěním planety 365 dní v roce.
-                    </p>
-
-                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                        <a href="#simulace" class="w-full sm:w-auto text-center bg-brand-primary hover:bg-brand-dark text-white font-bold px-8 py-4 rounded-2xl shadow-xl shadow-brand-primary/25 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 text-base">
-                            <span>🎮</span> Spustit Live Simulátor
-                        </a>
-                        <a href="#proctodelame" class="w-full sm:w-auto text-center bg-white hover:bg-slate-100 text-brand-dark font-bold px-8 py-4 rounded-2xl border border-slate-300 shadow-sm transition-all flex items-center justify-center gap-2 text-base">
-                            <span>📖</span> Náš Příběh
-                        </a>
-                    </div>
-
-                    <!-- Live Counter Banner -->
-                    <div class="pt-8 border-t border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-3 text-center lg:text-left">
-                        <div class="bg-white/80 p-3 rounded-2xl border border-slate-200">
-                            <p class="text-xl sm:text-2xl font-black text-brand-primary">14.2 tun</p>
-                            <p class="text-[11px] text-slate-500 font-medium">Uklizeno odpadu</p>
-                        </div>
-                        <div class="bg-white/80 p-3 rounded-2xl border border-slate-200">
-                            <p class="text-xl sm:text-2xl font-black text-brand-primary">38 450 km</p>
-                            <p class="text-[11px] text-slate-500 font-medium">Ujeto a uběhnuto</p>
-                        </div>
-                        <div class="bg-white/80 p-3 rounded-2xl border border-slate-200">
-                            <p class="text-xl sm:text-2xl font-black text-brand-primary">8 920</p>
-                            <p class="text-[11px] text-slate-500 font-medium">Sebraných pytlů</p>
-                        </div>
-                        <div class="bg-white/80 p-3 rounded-2xl border border-slate-200">
-                            <p class="text-xl sm:text-2xl font-black text-brand-primary">3 120</p>
-                            <p class="text-[11px] text-slate-500 font-medium">Aktivních ploggerů</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column: Interactive Phone Mockup -->
-                <div class="lg:col-span-6 flex justify-center">
-                    <div class="relative w-full max-w-sm sm:max-w-md bg-slate-950 p-4 sm:p-6 rounded-[40px] border-4 border-slate-800 shadow-2xl space-y-4 text-white">
-                        
-                        <!-- Phone Header -->
-                        <div class="flex items-center justify-between pb-3 border-b border-slate-800 text-xs">
-                            <div class="flex items-center gap-2">
-                                <img src="image_e35d91.png" 
-                                     onerror="this.onerror=null; this.outerHTML='<svg class=\'h-6 w-auto bg-white/90 p-0.5 rounded object-contain\' viewBox=\'0 0 420 100\'><use href=\'#gm-official-logo\'/></svg>';" 
-                                     class="h-6 w-auto bg-white/90 p-0.5 rounded object-contain" alt="App Logo">
-                                <span class="font-bold text-brand-light">GREEN MOVEMENT APP</span>
-                            </div>
-                            <span class="text-slate-400 font-mono text-[10px]">v2.4 Live GPS</span>
-                        </div>
-
-                        <!-- User Level Card -->
-                        <div class="bg-slate-900 p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-light to-brand-primary flex items-center justify-center font-bold text-white text-lg">
-                                    🏃
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-white">Jan Novák</p>
-                                    <p id="hero-phone-title" class="text-[10px] text-brand-soft">Level 12 • Lesní Hrdina</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <span id="hero-phone-xp" class="text-xs font-black text-brand-accent">2 450 XP</span>
-                                <span class="block text-[9px] text-slate-400">Streak: 🔥 5 dní</span>
-                            </div>
-                        </div>
-
-                        <!-- Mini GPS Canvas -->
-                        <div class="relative h-48 bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                            <canvas id="heroMapCanvas" class="w-full h-full"></canvas>
-                            <div class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-800 text-[10px] space-y-0.5">
-                                <p class="text-slate-300">Vzdálenost: <strong id="hero-phone-dist" class="text-white">2.8 km</strong></p>
-                                <p class="text-slate-300">Čas: <span id="hero-phone-time" class="text-brand-soft font-bold">22:10 min</span></p>
-                            </div>
-                        </div>
-
-                        <!-- Phone Interactive Button -->
-                        <div class="space-y-2">
-                            <button onclick="triggerHeroTrashCapture()" class="w-full py-3 bg-brand-primary hover:bg-brand-medium text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs">
-                                <span>📸</span> Vyfotit úlovek (+150 XP)
-                            </button>
-                            <p class="text-[10px] text-slate-400 text-center">Klikni a vyzkoušej simulaci vyfocení odpadků přímo v telefonu</p>
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION: PROČ TO DĚLÁME? (CONTINUOUS STORYTELLING WITHOUT HYPHENS) -->
-    <section id="proctodelame" class="py-24 bg-white border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl mx-auto text-center space-y-4 mb-16">
-                <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-primary">O Projektu</h2>
-                <h3 class="text-3xl sm:text-4xl font-black text-brand-dark">Proč Green Movement Děláme?</h3>
-            </div>
-
-            <!-- Storytelling Card without hyphens -->
-            <div class="bg-gradient-to-br from-brand-dark via-brand-primary to-emerald-900 text-white rounded-3xl p-8 sm:p-12 mb-16 shadow-xl space-y-6 text-base sm:text-lg leading-relaxed relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                    <img src="image_e35d91.png" 
-                         onerror="this.onerror=null; this.outerHTML='<svg class=\'w-64 h-auto\' viewBox=\'0 0 420 100\'><use href=\'#gm-official-logo\'/></svg>';" 
-                         alt="Watermark" class="w-64 h-auto">
-                </div>
-
-                <p>
-                    Projekt Green Movement vznikl na základě jednoduchého pozorování. Zatiaľco většina lidí chce žít v čistším prostředí, málokdo má chuť věnovat svá volná odpoledne organizovaným brigádám. Tradiční úklidové akce mají sice svůj význam, ale probíhají nárazově a nedokážou čelit každodennímu přílivu drobného odpadu v parcích, ulicích a lesích. Viděli jsme příležitost spojit něco, co lidé dělají běžně a rádi, tedy pohyb, běh a procházky, s konkrétním a okamžitým dopadem na okolní přírodu.
-                </p>
-                <p class="font-bold text-brand-soft">
-                    Zásadním problémem běžného sběru odpadků je absence motivace. Pro většinu populace působí jako nepříjemná povinnost bez jasné odměny. Proto do celého procesu vnášíme gamifikaci. Přeměnou úklidu v interaktivní hru plnou levelů, výzev a odznaků měníme vnímání této aktivity. Místo pocitu frustrace z nepořádku nabízejí herní prvky okamžitou zpětnou vazbu, budují pozitivní návyk a oslovují i mladší generace, které na klasické ekologické výzvy nereagují. Každý sebraný plastový obal nebo plechovka najednou znamená konkrétní body a posun na další úroveň.
-                </p>
-                <p>
-                    Naše aplikace vytváří funkční propojení mezi osobním zdravím, zábavou a péčí o veřejný prostor. Propojujeme komunitu lidí, kteří mohou své výsledky porovnávat, plnit společné cíle a budovat silnější vztah k místu, kde žijí. Navíc díky anonymizovaným datům o úklidu dokážeme městům a obcím ukázat, kde je jejich infrastruktura nedostačující. Tento projekt neděláme proto, abychom lidi poučovali o ekologii, ale abychom jim dali nástroj, díky kterému se z každodenní procházky nebo tréninku stává smysluplná a zábavná mise za čistším světem.
-                </p>
-            </div>
-
-            <!-- Comparison Table: Traditional Cleanups vs. Green Movement -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                
-                <!-- Traditional -->
-                <div class="bg-red-50/60 p-8 rounded-3xl border border-red-200 space-y-4">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">⏳</span>
-                        <h4 class="text-xl font-bold text-red-950">Tradiční úklidové akce</h4>
-                    </div>
-                    <ul class="space-y-3 text-sm text-red-900">
-                        <li class="flex items-center gap-2">❌ Probíhají pouze 1 až 2x ročně v nárazových vlnách</li>
-                        <li class="flex items-center gap-2">❌ Vyžadují fyzickou přítomnost v přesně určený čas</li>
-                        <li class="flex items-center gap-2">❌ Chybí systém dlouhodobé motivace a odměn</li>
-                        <li class="flex items-center gap-2">❌ Generují minimální nebo žádná strukturovaná data</li>
-                    </ul>
-                </div>
-
-                <!-- Green Movement -->
-                <div class="bg-emerald-50/80 p-8 rounded-3xl border-2 border-brand-primary space-y-4 shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">🌿</span>
-                        <h4 class="text-xl font-bold text-brand-dark">Green Movement Aplikace</h4>
-                    </div>
-                    <ul class="space-y-3 text-sm text-brand-dark font-medium">
-                        <li class="flex items-center gap-2">✅ Udržitelné zapojení 365 dní v roce kdykoliv venku</li>
-                        <li class="flex items-center gap-2">✅ Plná svoboda pohybu při vlastní trati či procházce</li>
-                        <li class="flex items-center gap-2">✅ Gamifikace s levely, odznaky a žebříčky ČR</li>
-                        <li class="flex items-center gap-2">✅ Anonymizované mapové podklady pro městské úřady</li>
-                    </ul>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- INTERACTIVE APP SIMULATOR SECTION -->
-    <section id="simulace" class="py-24 bg-slate-900 text-white relative overflow-hidden">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="max-w-3xl mx-auto text-center space-y-4 mb-12">
-                <span class="px-3 py-1 rounded-full bg-brand-light/20 text-brand-light text-xs font-bold uppercase tracking-wider">Interaktivní Vyzkoušení</span>
-                <h2 class="text-3xl sm:text-4xl font-black text-white">Mobilní Plogging Simulátor</h2>
-                <p class="text-slate-300 text-sm sm:text-base">
-                    Vyzkoušejte si, jak aplikace vyhodnocuje sebrané pytle odpadu a připisuje XP body v reálném čase.
-                </p>
-            </div>
-
-            <!-- Simulator Framework Container -->
-            <div class="max-w-4xl mx-auto dark-glass-card rounded-3xl p-6 sm:p-8 shadow-2xl relative border border-slate-700">
-                
-                <!-- Profile Header Inside Simulator -->
-                <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-slate-700/80">
-                    <div class="flex items-center gap-4">
-                        <!-- User Profile Picture with Online Status Indicator -->
-                        <div class="relative">
-                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200" 
-                                 alt="Lucie Dvořáková" 
-                                 class="w-12 h-12 rounded-full object-cover border-2 border-brand-light shadow-md">
-                            <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-400 border-2 border-slate-900 rounded-full"></span>
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-lg font-bold text-white">Lucie Dvořáková</h3>
-                                <span id="sim-level-badge" class="bg-brand-accent text-slate-950 font-black text-xs px-2.5 py-0.5 rounded-full">Level 12</span>
-                            </div>
-                            <p id="sim-title" class="text-xs text-brand-soft font-medium">Lesní Hrdinka • Praha 6</p>
-                        </div>
-                    </div>
-
-                    <!-- XP Counter Box -->
-                    <div class="bg-slate-950/80 border border-slate-800 px-5 py-2.5 rounded-2xl flex items-center gap-3">
-                        <span class="text-2xl">🌟</span>
-                        <div>
-                            <span class="text-[10px] text-slate-400 font-semibold uppercase block">Aktuální XP</span>
-                            <span id="sim-xp-text" class="text-lg font-black text-white">2 450 / 3 000 XP</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- XP Bar -->
-                <div class="my-6 space-y-1">
-                    <div class="w-full h-3.5 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
-                        <div id="sim-xp-bar" class="h-full bg-gradient-to-r from-brand-light to-emerald-300 rounded-full transition-all duration-500" style="width: 81%;"></div>
-                    </div>
-                </div>
-
-                <!-- Map Canvas & Control Interface -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                    
-                    <!-- Map Canvas -->
-                    <div class="md:col-span-7 relative h-72 bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden">
-                        <canvas id="mapCanvas" class="w-full h-full"></canvas>
-
-                        <!-- Live Stats Overlay -->
-                        <div class="absolute top-3 left-3 bg-slate-900/90 backdrop-blur-md px-3.5 py-2 rounded-xl border border-slate-700/80 text-xs font-semibold space-y-1">
-                            <div class="flex items-center gap-2 text-slate-200">
-                                <span id="pulse-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
-                                <span>Trasa: <strong id="sim-dist" class="text-white">3.40 km</strong></span>
-                            </div>
-                            <div class="text-slate-300">Čas: <span id="sim-time" class="text-white font-bold">28:15</span> | <span id="sim-cal" class="text-brand-soft">210 kcal</span></div>
-                        </div>
-                    </div>
-
-                    <!-- Interactive Controls Panel -->
-                    <div class="md:col-span-5 space-y-4">
-                        <button id="btn-start-run" onclick="toggleRunSimulation()" class="w-full py-4 bg-brand-primary hover:bg-brand-medium text-white font-bold rounded-2xl shadow-xl transition-all flex items-center justify-center gap-3 text-base">
-                            <span id="run-icon">▶️</span> <span id="run-btn-text">Zahájit plogging trasu</span>
-                        </button>
-
-                        <button id="btn-snap-trash" onclick="openTrashModal()" disabled class="w-full py-4 bg-slate-800 text-slate-500 font-bold rounded-2xl border border-slate-700 transition-all flex items-center justify-center gap-3 text-base opacity-50 cursor-not-allowed">
-                            <span>📸</span> Vyfotit úlovek odpadků
-                        </button>
-
-                        <div class="p-4 bg-slate-950/70 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2">
-                            <div class="flex justify-between">
-                                <span>Sebrané pytle:</span>
-                                <strong id="sim-bags-count" class="text-white">2 ks</strong>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Odhadovaný objem:</span>
-                                <strong id="sim-volume" class="text-brand-soft">40 Litrů</strong>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>Streak aktivity:</span>
-                                <strong class="text-amber-400">🔥 7 dní v řadě</strong>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- TRASH MODAL DIALOG -->
-    <div id="trash-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-6 shadow-2xl relative text-slate-800">
-            <button onclick="closeTrashModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 font-bold text-xl">✕</button>
+    <div id="dev-cheat-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="glass-panel-glow rounded-3xl max-w-md w-full p-6 space-y-6 text-slate-100 relative">
+            <button onclick="toggleDevCheatModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white font-bold text-xl">✕</button>
 
             <div class="text-center space-y-2">
-                <span class="text-4xl">📸</span>
-                <h3 class="text-xl font-bold text-brand-dark">Vyfotit úlovek odpadků</h3>
-                <p class="text-xs text-slate-500">Vyberte velikost naplněného pytle pro výpočet XP</p>
+                <i class="fa-solid fa-wand-magic-sparkles text-4xl text-purple-400 animate-bounce"></i>
+                <h3 class="text-xl font-black text-white">VIP Vývojářský & Testovací Panel</h3>
+                <p class="text-xs text-slate-400">Přidej si neomezený počet peněz, XP bodů nebo otestuj odemykání bedniček.</p>
             </div>
 
-            <div class="relative h-44 rounded-2xl bg-slate-100 border border-slate-200 overflow-hidden">
-                <img id="trash-photo-preview" src="https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=400" alt="Fotka pytle s odpadky" class="w-full h-full object-cover">
-                <div class="absolute bottom-2 right-2 bg-slate-900/80 text-[10px] text-white px-2.5 py-1 rounded-lg">
-                    📍 GPS Ověřeno
-                </div>
-            </div>
-
-            <!-- Bag Size Selector -->
-            <div class="grid grid-cols-3 gap-3">
-                <button onclick="selectTrashSize('small')" class="trash-size-btn p-3 rounded-xl border border-slate-200 bg-slate-50 text-center hover:border-brand-primary transition-all">
-                    <span class="block text-lg">🛍️</span>
-                    <span class="block text-xs font-bold text-slate-800 mt-1">Malý</span>
-                    <span class="block text-[10px] text-brand-primary font-bold">+50 XP</span>
+            <div class="space-y-3">
+                <button onclick="grantTestMoney(100000)" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-black py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-coins"></i> Pridat +100 000 Green Coins
                 </button>
-
-                <button onclick="selectTrashSize('medium')" class="trash-size-btn p-3 rounded-xl border-2 border-brand-primary bg-emerald-50 text-center transition-all">
-                    <span class="block text-lg">🗑️</span>
-                    <span class="block text-xs font-bold text-slate-800 mt-1">Plný 30l</span>
-                    <span class="block text-[10px] text-brand-primary font-bold">+150 XP</span>
+                <button onclick="grantTestXP(25000)" class="w-full bg-brand-emerald hover:bg-emerald-500 text-black font-black py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-star"></i> Pridat +25 000 XP (Level Up)
                 </button>
-
-                <button onclick="selectTrashSize('large')" class="trash-size-btn p-3 rounded-xl border border-slate-200 bg-slate-50 text-center hover:border-brand-primary transition-all">
-                    <span class="block text-lg">📦</span>
-                    <span class="block text-xs font-bold text-slate-800 mt-1">Velký 60l</span>
-                    <span class="block text-[10px] text-brand-primary font-bold">+300 XP</span>
+                <button onclick="triggerConfettiTest()" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-champagne-glasses"></i> Spustit Oslavné Konfety
                 </button>
             </div>
 
-            <button onclick="confirmTrashUpload()" class="w-full py-3.5 bg-brand-primary hover:bg-brand-dark text-white font-bold rounded-xl shadow-lg transition-all text-sm">
-                Odeslat a získat XP
-            </button>
+            <div class="pt-2 border-t border-slate-800 text-center">
+                <button onclick="toggleDevCheatModal()" class="text-xs font-bold text-slate-400 hover:text-white">Zavřít Panel</button>
+            </div>
         </div>
     </div>
 
-    <!-- LEVEL PROGRESSION CALCULATOR SECTION -->
-    <section id="kalkulacka" class="py-24 bg-brand-cream border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl mx-auto text-center space-y-4 mb-12">
-                <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-primary">Interaktivní Výpočet</h2>
-                <h3 class="text-3xl sm:text-4xl font-black text-brand-dark">Jaké Úrovně Můžeš Dosáhnout?</h3>
-                <p class="text-slate-600 text-sm sm:text-base">
-                    Posouvej posuvníky kilometrů a sebraných pytlů a spočítej si svůj budoucí herní level v Green Movement.
-                </p>
-            </div>
-
-            <div class="max-w-3xl mx-auto bg-white p-8 rounded-3xl border border-slate-200 shadow-xl space-y-8">
-                
-                <!-- Distance Slider -->
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center text-sm font-bold">
-                        <span class="text-slate-700">Měsíčně naběháno / najeto:</span>
-                        <span id="calc-dist-val" class="text-brand-primary font-black text-lg">30 km</span>
-                    </div>
-                    <input type="range" id="calc-dist-slider" min="5" max="150" value="30" oninput="updateCalculator()" class="w-full accent-brand-primary h-2 bg-slate-200 rounded-lg cursor-pointer">
-                </div>
-
-                <!-- Bags Slider -->
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center text-sm font-bold">
-                        <span class="text-slate-700">Sebraných pytlů odpadu měsíčně:</span>
-                        <span id="calc-bags-val" class="text-brand-primary font-black text-lg">10 pytlů</span>
-                    </div>
-                    <input type="range" id="calc-bags-slider" min="1" max="50" value="10" oninput="updateCalculator()" class="w-full accent-brand-primary h-2 bg-slate-200 rounded-lg cursor-pointer">
-                </div>
-
-                <!-- Result Box -->
-                <div class="bg-gradient-to-r from-brand-dark to-brand-primary text-white p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div class="text-center sm:text-left space-y-1">
-                        <span class="text-xs uppercase font-bold text-brand-soft tracking-wider">Váš vypočítaný hodnostní status</span>
-                        <h4 id="calc-rank-title" class="text-2xl font-black">Level 5 • Parkový Strážce</h4>
-                        <p id="calc-xp-total" class="text-xs text-slate-200">Odhadovaný zisk: 3 000 XP / měsíc</p>
-                    </div>
-                    <div class="text-4xl">🌲</div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- GAMIFICATION & BADGES SECTION -->
-    <section id="gamifikace" class="py-24 bg-white border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl mx-auto text-center space-y-4 mb-16">
-                <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-primary">Herní Systém</h2>
-                <h3 class="text-3xl sm:text-4xl font-black text-brand-dark">Sběratelské Odznaky & Výzvy</h3>
-                <p class="text-slate-600 text-sm sm:text-base">
-                    Plňte denní a týdenní mise, sbírejte unikátní odznaky a stoupejte v celostátní hodnostní tabulce.
-                </p>
-            </div>
-
-            <!-- Collectible Badges Grid (Expanded to 8 Achievements) -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                
-                <div onclick="showBadgeModal('Ranní Ptáče', 'Úklid provedený před 8:00 ráno. Skvělý start do nového dne!', '🌅')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">🌅</div>
-                    <h5 class="text-sm font-bold text-slate-800">Ranní Ptáče</h5>
-                    <p class="text-xs text-slate-500">Úklid před 8:00 ráno</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+100 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('10 kg Odpadu', 'Nasbírej celkem 10 kilogramů odpadu během libovolných plogging trras.', '📦')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">📦</div>
-                    <h5 class="text-sm font-bold text-slate-800">10 kg Odpadu</h5>
-                    <p class="text-xs text-slate-500">Celková hmotnost 10 kg</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+250 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('Víkendový Čistič', 'Splň alespoň 2 plogging běhy během jednoho víkendu.', '⚡')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">⚡</div>
-                    <h5 class="text-sm font-bold text-slate-800">Víkendový Čistič</h5>
-                    <p class="text-xs text-slate-500">Aktivita v sobota & neděle</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+300 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('Čisté Město', 'Pomoz vyčistit 5 různých městských částí nebo lokalit.', '🏙️')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">🏙️</div>
-                    <h5 class="text-sm font-bold text-slate-800">Čisté Město</h5>
-                    <p class="text-xs text-slate-500">Úklid v 5 městských oblastech</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+500 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('Lesní Strážce', 'Uklej více než 10 litrů plastového odpadu přímo v chráněné krajinné oblasti nebo lese.', '🌲')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">🌲</div>
-                    <h5 class="text-sm font-bold text-slate-800">Lesní Strážce</h5>
-                    <p class="text-xs text-slate-500">Úklid v přírodním parku či lese</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+400 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('Streak Master', 'Udrž si aktivní streak v ploggingu alespoň 7 dní v řadě bez přerušení.', '🔥')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">🔥</div>
-                    <h5 class="text-sm font-bold text-slate-800">Streak Master</h5>
-                    <p class="text-xs text-slate-500">7 dní aktivity bez pauzy</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+650 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('Plechovkový Král', 'Vyfoť a zaznamenej recyklaci celkem 50 hliníkových plechovek.', '🥤')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">🥤</div>
-                    <h5 class="text-sm font-bold text-slate-800">Plechovkový Král</h5>
-                    <p class="text-xs text-slate-500">Recyklace 50 plechovek</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+350 XP</span>
-                </div>
-
-                <div onclick="showBadgeModal('Komunitní Lídra', 'Vytvoř veřejnou plogging výzvu a zapoj do ní alespoň 10 dalších běžců.', '👥')" class="bg-brand-bgLight p-6 rounded-2xl border border-slate-200 text-center space-y-3 hover:border-brand-primary cursor-pointer transition-all hover:scale-105 shadow-sm">
-                    <div class="text-4xl">👥</div>
-                    <h5 class="text-sm font-bold text-slate-800">Komunitní Lídr</h5>
-                    <p class="text-xs text-slate-500">Zorganizuj výzvu pro 10+ lidí</p>
-                    <span class="inline-block text-[10px] font-bold bg-emerald-100 text-brand-dark px-2.5 py-0.5 rounded-full">+1000 XP</span>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- BADGE TOOLTIP MODAL -->
-    <div id="badge-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl relative">
-            <button onclick="closeBadgeModal()" class="absolute top-4 right-4 text-slate-400 font-bold">✕</button>
-            <div id="badge-modal-icon" class="text-5xl">🏅</div>
-            <h4 id="badge-modal-title" class="text-xl font-bold text-brand-dark">Název Odznaku</h4>
-            <p id="badge-modal-desc" class="text-xs text-slate-600">Popis výzvy a podmínek splnění.</p>
-            <button onclick="closeBadgeModal()" class="w-full py-2.5 bg-brand-primary text-white font-bold rounded-xl text-xs">Zavřít</button>
-        </div>
-    </div>
-
-    <!-- COMMUNITY & FILTERABLE LEADERBOARD SECTION -->
-    <section id="zebricek" class="py-24 bg-brand-bgLight border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-3xl mx-auto text-center space-y-4 mb-12">
-                <h2 class="text-xs font-extrabold uppercase tracking-widest text-brand-primary">Česká Komunita</h2>
-                <h3 class="text-3xl sm:text-4xl font-black text-brand-dark">Žebříček Ploggerů ČR</h3>
-            </div>
-
-            <!-- Leaderboard Filter Tabs -->
-            <div class="flex justify-center gap-2 mb-8">
-                <button onclick="filterLeaderboard('today')" class="lb-tab bg-brand-primary text-white font-bold text-xs px-5 py-2.5 rounded-full transition-all">Dnes</button>
-                <button onclick="filterLeaderboard('week')" class="lb-tab bg-white text-slate-700 border border-slate-200 font-bold text-xs px-5 py-2.5 rounded-full transition-all">Tento týden</button>
-                <button onclick="filterLeaderboard('all')" class="lb-tab bg-white text-slate-700 border border-slate-200 font-bold text-xs px-5 py-2.5 rounded-full transition-all">Celkově</button>
-            </div>
-
-            <div class="max-w-3xl mx-auto bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-lg">
-                <div class="p-4 bg-slate-100 border-b border-slate-200 text-xs font-bold text-slate-500 grid grid-cols-12 gap-2">
-                    <span class="col-span-1 text-center">#</span>
-                    <span class="col-span-6">Plogger</span>
-                    <span class="col-span-3 text-center">Pytle / km</span>
-                    <span class="col-span-2 text-right">XP</span>
-                </div>
-
-                <div id="leaderboard-rows" class="divide-y divide-slate-200 text-sm font-semibold">
-                    <!-- JavaScript populated rows -->
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- SECTION: PRO MĚSTA A OBCE (DATA-DRIVEN IMPACT) -->
-    <section id="mesta" class="py-24 bg-white border-t border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                
-                <div class="lg:col-span-6 space-y-6">
-                    <span class="text-xs font-bold uppercase tracking-widest text-brand-primary">Pro Města a Obce</span>
-                    <h3 class="text-3xl sm:text-4xl font-black text-brand-dark">Data o nepořádku pro české samosprávy</h3>
-                    <p class="text-slate-600 text-base leading-relaxed">
-                        Aplikace Green Movement generuje anonymizovaná teploměrná data znečištění, která pomáhají českým městům a obcím plánovat lepší rozmístění odpadkových košů a zefektivňovat městské úklidové služby.
-                    </p>
-                    <ul class="space-y-3 text-slate-700 text-sm font-medium">
-                        <li class="flex items-center gap-3">
-                            <span class="text-brand-primary font-black">✓</span> Mapování míst s nejčastějším výskytem nepořádku
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="text-brand-primary font-black">✓</span> Podklad pro optimalizaci výsypu odpadkových košů
-                        </li>
-                        <li class="flex items-center gap-3">
-                            <span class="text-brand-primary font-black">✓</span> Aktivní zapojení občanů do péče o veřejný prostor
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="lg:col-span-6 bg-brand-bgLight p-6 rounded-3xl border border-slate-200 shadow-lg">
-                    <div class="h-64 rounded-2xl bg-slate-900 relative overflow-hidden flex items-center justify-center">
-                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(239,68,68,0.6),transparent_40%)]"></div>
-                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_70%_60%,rgba(234,179,8,0.5),transparent_40%)]"></div>
-                        <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_80%,rgba(82,183,136,0.4),transparent_50%)]"></div>
-                        <span class="relative z-10 text-xs font-bold text-white bg-slate-950/90 px-4 py-2 rounded-full border border-slate-700">
-                            🗺️ Anonymizovaná Teplotní Mapa Úklidu ČR
-                        </span>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- CALL TO ACTION & FOOTER -->
-    <footer class="bg-brand-dark text-white pt-16 pb-12 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+    <div id="unboxing-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl hidden flex items-center justify-center p-4">
+        <div class="text-center space-y-6 max-w-sm w-full">
             
-            <div class="flex flex-col md:flex-row items-center justify-between gap-8 pb-12 border-b border-slate-800 text-center md:text-left">
-                <div class="space-y-2">
-                    <h3 class="text-2xl font-black text-white">Stáhni si Green Movement a začni hned</h3>
-                    <p class="text-xs text-slate-300">Aplikace je dostupná pro iOS a Android zcela zdarma.</p>
-                </div>
-                <div class="flex flex-wrap justify-center gap-4">
-                    <button onclick="alert('Děkujeme za zájem! Aplikace bude ke stažení již brzy na App Store.')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3 rounded-2xl border border-slate-700 flex items-center gap-3 text-xs">
-                        <span>🍏</span> App Store
-                    </button>
-                    <button onclick="alert('Děkujeme za zájem! Aplikace bude ke stažení již brzy na Google Play.')" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-6 py-3 rounded-2xl border border-slate-700 flex items-center gap-3 text-xs">
-                        <span>🤖</span> Google Play
-                    </button>
-                </div>
+            <div id="unboxing-box-anim" class="w-32 h-32 mx-auto rounded-3xl bg-gradient-to-tr from-brand-emerald to-brand-lime flex items-center justify-center text-6xl shadow-2xl animate-shake">
+                📦
             </div>
 
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-6">
-                
-                <!-- Footer Logo -->
-                <a href="#" class="flex items-center gap-3">
-                    <img src="image_e35d91.png" 
-                         onerror="this.onerror=null; this.outerHTML='<svg class=\'h-10 w-auto rounded-lg bg-white p-1\' viewBox=\'0 0 420 100\'><use href=\'#gm-official-logo\'/></svg>';" 
-                         alt="Green Movement Logo Footer" 
-                         class="h-10 w-auto rounded-lg bg-white p-1">
-                </a>
+            <div class="space-y-2">
+                <h3 id="unboxing-title" class="text-2xl font-black text-white">Otevírám Zlatou Bedničku...</h3>
+                <p id="unboxing-desc" class="text-xs text-brand-lime animate-pulse">Probíhá generování náhodného kosmetického předmětu</p>
+            </div>
 
-                <p class="text-xs text-slate-300 text-center">
-                    © 2026 GREEN MOVEMENT • Hýbej se pro přírodu. Všechna práva vyhrazena.
-                </p>
-
-                <div class="flex gap-6 text-xs font-semibold text-slate-300">
-                    <a href="#proctodelame" class="hover:text-white transition-colors">O nás</a>
-                    <a href="#simulace" class="hover:text-white transition-colors">Aplikace</a>
-                    <a href="#mesta" class="hover:text-white transition-colors">Obce</a>
-                </div>
+            <div id="unboxing-result-card" class="hidden glass-panel p-6 rounded-2xl border border-brand-lime space-y-3">
+                <span class="text-4xl">✨</span>
+                <h4 id="unboxing-item-name" class="text-lg font-bold text-white">Rámeček: Živoucí Gaia</h4>
+                <p class="text-xs text-brand-lime font-bold">Vzácnost: LEGENDARY</p>
+                <button onclick="closeUnboxingModal()" class="w-full bg-brand-emerald text-black font-black py-2.5 rounded-xl text-xs">
+                    Vybavit Na Profil
+                </button>
             </div>
 
         </div>
-    </footer>
+    </div>
 
-    <!-- JAVASCRIPT SIMULATOR & INTERACTIVITY LOGIC -->
     <script>
-        // Hero Phone Mini Canvas
-        const heroCanvas = document.getElementById('heroMapCanvas');
-        if (heroCanvas) {
-            heroCanvas.width = 300;
-            heroCanvas.height = 190;
-            const hctx = heroCanvas.getContext('2d');
-            hctx.fillStyle = '#0f172a';
-            hctx.fillRect(0, 0, 300, 190);
-            
-            // Draw path
-            hctx.beginPath();
-            hctx.strokeStyle = '#52b788';
-            hctx.lineWidth = 4;
-            hctx.moveTo(30, 160);
-            hctx.lineTo(120, 80);
-            hctx.lineTo(220, 120);
-            hctx.lineTo(270, 40);
-            hctx.stroke();
-        }
-
-        function triggerHeroTrashCapture() {
-            confetti({ particleCount: 70, spread: 60, origin: { y: 0.5 } });
-            document.getElementById('hero-phone-xp').innerText = '2 600 XP';
-            document.getElementById('hero-phone-dist').innerText = '3.1 km';
-            alert('Úlovek úspěšně zaznamenán! Získáváte +150 XP.');
-        }
-
-        // Main App Simulator State
-        let isRunning = false;
-        let simDistance = 3.40;
-        let simTimeSeconds = 1695;
-        let simXP = 2450;
-        let maxXP = 3000;
-        let simLevel = 12;
-        let bagsCount = 2;
-        let volumeLiters = 40;
-        let timerInterval = null;
-        let selectedSize = 'medium';
-
-        const canvas = document.getElementById('mapCanvas');
-        const ctx = canvas.getContext('2d');
-
-        function resizeCanvas() {
-            if (canvas && canvas.parentElement) {
-                canvas.width = canvas.parentElement.clientWidth;
-                canvas.height = canvas.parentElement.clientHeight;
-                drawMapBackground();
-            }
-        }
-        window.addEventListener('resize', resizeCanvas);
-        setTimeout(resizeCanvas, 100);
-
-        function drawMapBackground() {
-            if (!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.strokeStyle = '#1e293b';
-            ctx.lineWidth = 1;
-            for(let i=0; i<canvas.width; i+=30) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-            }
-            for(let j=0; j<canvas.height; j+=30) {
-                ctx.beginPath(); ctx.moveTo(0, j); ctx.lineTo(canvas.width, j); ctx.stroke();
-            }
-
-            ctx.beginPath();
-            ctx.strokeStyle = isRunning ? '#52b788' : '#475569';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([5, 5]);
-            ctx.moveTo(20, canvas.height - 20);
-            ctx.lineTo(canvas.width / 2, canvas.height / 2);
-            ctx.lineTo(canvas.width - 30, 30);
-            ctx.stroke();
-            ctx.setLineDash([]);
-        }
-
-        function toggleRunSimulation() {
-            isRunning = !isRunning;
-            const btnText = document.getElementById('run-btn-text');
-            const runIcon = document.getElementById('run-icon');
-            const snapBtn = document.getElementById('btn-snap-trash');
-            const pulseDot = document.getElementById('pulse-dot');
-
-            if (isRunning) {
-                btnText.innerText = "Pozastavit trasu";
-                runIcon.innerText = "⏸️";
-                snapBtn.disabled = false;
-                snapBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
-                snapBtn.classList.add('bg-brand-primary', 'text-white', 'hover:bg-brand-medium');
-                pulseDot.classList.remove('bg-slate-500');
-                pulseDot.classList.add('bg-brand-light', 'animate-ping');
-
-                timerInterval = setInterval(() => {
-                    simTimeSeconds++;
-                    simDistance += 0.005;
-                    updateSimUI();
-                    drawMapBackground();
-                }, 1000);
-            } else {
-                btnText.innerText = "Pokračovat v trase";
-                runIcon.innerText = "▶️";
-                snapBtn.disabled = true;
-                snapBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-slate-800', 'text-slate-500');
-                snapBtn.classList.remove('bg-brand-primary', 'text-white', 'hover:bg-brand-medium');
-                pulseDot.classList.remove('bg-brand-light', 'animate-ping');
-                pulseDot.classList.add('bg-slate-500');
-                clearInterval(timerInterval);
-            }
-        }
-
-        function updateSimUI() {
-            document.getElementById('sim-dist').innerText = simDistance.toFixed(2) + ' km';
-            
-            let mins = Math.floor(simTimeSeconds / 60).toString().padStart(2, '0');
-            let secs = (simTimeSeconds % 60).toString().padStart(2, '0');
-            document.getElementById('sim-time').innerText = `${mins}:${secs}`;
-            document.getElementById('sim-cal').innerText = `${Math.floor(simDistance * 60)} kcal`;
-
-            document.getElementById('sim-xp-text').innerText = `${simXP} / ${maxXP} XP`;
-            let percentage = Math.min((simXP / maxXP) * 100, 100);
-            document.getElementById('sim-xp-bar').style.width = percentage + '%';
-
-            document.getElementById('sim-bags-count').innerText = bagsCount + ' ks';
-            document.getElementById('sim-volume').innerText = volumeLiters + ' Litrů';
-        }
-
-        function openTrashModal() {
-            document.getElementById('trash-modal').classList.remove('hidden');
-        }
-
-        function closeTrashModal() {
-            document.getElementById('trash-modal').classList.add('hidden');
-        }
-
-        function selectTrashSize(size) {
-            selectedSize = size;
-            document.querySelectorAll('.trash-size-btn').forEach(btn => {
-                btn.classList.remove('border-2', 'border-brand-primary', 'bg-emerald-50');
-                btn.classList.add('border-slate-200', 'bg-slate-50');
-            });
-            if (window.event && window.event.currentTarget) {
-                window.event.currentTarget.classList.remove('border-slate-200', 'bg-slate-50');
-                window.event.currentTarget.classList.add('border-2', 'border-brand-primary', 'bg-emerald-50');
-            }
-        }
-
-        function confirmTrashUpload() {
-            closeTrashModal();
-
-            let earnedXP = 150;
-            let addedVolume = 30;
-
-            if (selectedSize === 'small') { earnedXP = 50; addedVolume = 10; }
-            if (selectedSize === 'medium') { earnedXP = 150; addedVolume = 30; }
-            if (selectedSize === 'large') { earnedXP = 300; addedVolume = 60; }
-
-            simXP += earnedXP;
-            bagsCount += 1;
-            volumeLiters += addedVolume;
-
-            if (simXP >= maxXP) {
-                simLevel += 1;
-                simXP = simXP - maxXP;
-                maxXP = Math.floor(maxXP * 1.4);
-                document.getElementById('sim-level-badge').innerText = `Level ${simLevel}`;
-
-                confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
-            }
-
-            updateSimUI();
-            confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
-        }
-
-        // Calculator Logic
-        function updateCalculator() {
-            const dist = parseInt(document.getElementById('calc-dist-slider').value);
-            const bags = parseInt(document.getElementById('calc-bags-slider').value);
-
-            document.getElementById('calc-dist-val').innerText = dist + ' km';
-            document.getElementById('calc-bags-val').innerText = bags + ' pytlů';
-
-            const totalXP = (dist * 30) + (bags * 150);
-            let rank = "Level 1 • Zvědavý Chodec";
-
-            if (totalXP >= 1000) rank = "Level 3 • Parkový Čistič";
-            if (totalXP >= 2500) rank = "Level 6 • Parkový Strážce";
-            if (totalXP >= 5000) rank = "Level 12 • Lesní Hrdina";
-            if (totalXP >= 9000) rank = "Level 25 • Eko Legenda";
-
-            document.getElementById('calc-rank-title').innerText = rank;
-            document.getElementById('calc-xp-total').innerText = `Odhadovaný zisk: ${totalXP} XP / měsíc`;
-        }
-
-        // Badge Modal
-        function showBadgeModal(title, desc, icon) {
-            document.getElementById('badge-modal-title').innerText = title;
-            document.getElementById('badge-modal-desc').innerText = desc;
-            document.getElementById('badge-modal-icon').innerText = icon;
-            document.getElementById('badge-modal').classList.remove('hidden');
-        }
-
-        function closeBadgeModal() {
-            document.getElementById('badge-modal').classList.add('hidden');
-        }
-
-        // Leaderboard Data & Filter Logic
-        const lbData = {
-            today: [
-                { name: "Martin z Prahy", level: "Level 24 • Lesní Strážce", bags: "12 pytlů", km: "8.4 km", xp: "1 850" },
-                { name: "Eliška z Brna", level: "Level 18 • Parkový Strážce", bags: "8 pytlů", km: "6.1 km", xp: "1 200" },
-                { name: "Petr ze Zlína", level: "Level 15 • Eko Běžec", bags: "5 pytlů", km: "5.0 km", xp: "850" }
-            ],
-            week: [
-                { name: "Eliška z Brna", level: "Level 18 • Parkový Strážce", bags: "34 pytlů", km: "32 km", xp: "5 400" },
-                { name: "Martin z Prahy", level: "Level 24 • Lesní Strážce", bags: "28 pytlů", km: "41 km", xp: "4 950" },
-                { name: "Klára z Ostravy", level: "Level 11 • Čistič Okolí", bags: "19 pytlů", km: "3 100" }
-            ],
-            all: [
-                { name: "Martin z Prahy", level: "Level 24 • Lesní Strážce", bags: "142 pytlů", km: "210 km", xp: "28 400" },
-                { name: "Eliška z Brna", level: "Level 18 • Parkový Strážce", bags: "98 pytlů", km: "165 km", xp: "19 100" },
-                { name: "Petr ze Zlína", level: "Level 15 • Eko Běžec", bags: "76 pytlů", km: "120 km", xp: "14 850" }
-            ]
+        // Global Application State
+        let userState = {
+            coins: 100000,
+            xp: 50000,
+            level: 42,
+            prestige: 1,
+            distanceKm: 142.8,
+            bagsCount: 86,
+            streakDays: 12
         };
 
-        function filterLeaderboard(period, evt) {
-            const activeTab = evt ? evt.currentTarget : document.querySelectorAll('.lb-tab')[2];
-            document.querySelectorAll('.lb-tab').forEach(tab => {
-                tab.classList.remove('bg-brand-primary', 'text-white');
-                tab.classList.add('bg-white', 'text-slate-700');
-            });
-            if (activeTab) {
-                activeTab.classList.remove('bg-white', 'text-slate-700');
-                activeTab.classList.add('bg-brand-primary', 'text-white');
+        // PWA Router / Tab Switching
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(`tab-${tabId}`);
+            if (target) {
+                target.classList.remove('hidden');
+            }
+            if (tabId === 'map') {
+                setTimeout(initLeafletMap, 200);
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Developer God-Mode Helpers
+        function toggleDevCheatModal() {
+            const modal = document.getElementById('dev-cheat-modal');
+            modal.classList.toggle('hidden');
+        }
+
+        function grantTestMoney(amount) {
+            userState.coins += amount;
+            updateUserUI();
+            confetti({ particleCount: 50, spread: 60 });
+        }
+
+        function grantTestXP(amount) {
+            userState.xp += amount;
+            updateUserUI();
+            confetti({ particleCount: 80, spread: 80 });
+        }
+
+        function triggerConfettiTest() {
+            confetti({ particleCount: 120, spread: 100, origin: { y: 0.6 } });
+        }
+
+        function updateUserUI() {
+            document.getElementById('user-coins-display').innerText = userState.coins.toLocaleString('cs-CZ');
+            document.getElementById('user-xp-display').innerText = `${userState.xp.toLocaleString('cs-CZ')} XP`;
+        }
+
+        // Leaflet Interactive Map Init
+        let mapInitialized = false;
+        function initLeafletMap() {
+            if (mapInitialized) return;
+            mapInitialized = true;
+
+            const map = L.map('leafletMap').setView([49.8175, 15.4730], 7); // Center Czech Republic
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors | Green Movement Fog of War'
+            }).addTo(map);
+
+            // Add demo markers
+            L.marker([50.0755, 14.4378]).addTo(map).bindPopup('<b>Praha — Odkryté Území</b><br>Sebráno 24 pytlů.');
+            L.marker([49.2231, 17.6670]).addTo(map).bindPopup('<b>Zlín — Dobyto</b><br>Základna Green Movement.');
+        }
+
+        // Leaderboard Filter Logic
+        const lbMock = [
+            { rank: 1, name: "Martin z Prahy", title: "👑 ABSOLUTNÍ VLÁDCE ČR", bags: "142 pytlů", km: "210 km", xp: "128 400 XP" },
+            { rank: 2, name: "Eliška z Brna", title: "🌿 Duch Lesního Hvozdu", bags: "98 pytlů", km: "165 km", xp: "98 100 XP" },
+            { rank: 3, name: "Jan Novák (Ty)", title: "✨ ŽIVOUCÍ LEGENDA ✨", bags: "86 pytlů", km: "142 km", xp: "50 000 XP" },
+            { rank: 4, name: "Petr ze Zlína", title: "⚡ Bleskový Plogger", bags: "76 pytlů", km: "120 km", xp: "44 850 XP" }
+        ];
+
+        function filterLeaderboard(period, btn) {
+            if (btn) {
+                document.querySelectorAll('.lb-tab').forEach(b => {
+                    b.classList.remove('bg-brand-emerald', 'text-black');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-brand-emerald', 'text-black');
+                btn.classList.remove('text-slate-400');
             }
 
-            const container = document.getElementById('leaderboard-rows');
+            const container = document.getElementById('leaderboard-rows-container');
             container.innerHTML = '';
 
-            lbData[period].forEach((user, idx) => {
+            lbMock.forEach(item => {
                 const row = document.createElement('div');
-                row.className = "p-4 grid grid-cols-12 gap-2 items-center bg-white";
+                row.className = "p-4 grid grid-cols-12 gap-2 items-center hover:bg-slate-900/50 transition-colors";
                 row.innerHTML = `
-                    <span class="col-span-1 text-center font-black ${idx === 0 ? 'text-amber-500' : 'text-slate-400'}">${idx + 1}.</span>
-                    <div class="col-span-6 flex items-center gap-3">
-                        <span class="text-xl">${idx === 0 ? '👑' : idx === 1 ? '🥈' : '🥉'}</span>
-                        <div>
-                            <p class="text-slate-800 font-bold">${user.name}</p>
-                            <p class="text-[10px] text-slate-500">${user.level}</p>
-                        </div>
+                    <span class="col-span-1 text-center font-black ${item.rank === 1 ? 'text-amber-400' : 'text-slate-400'}">${item.rank}.</span>
+                    <div class="col-span-5">
+                        <p class="text-white font-bold">${item.name}</p>
+                        <p class="text-[10px] text-brand-lime font-medium">${item.title}</p>
                     </div>
-                    <span class="col-span-3 text-center text-brand-primary font-bold">${user.bags} / ${user.km}</span>
-                    <span class="col-span-2 text-right font-black text-slate-800">${user.xp}</span>
+                    <span class="col-span-3 text-center text-xs text-slate-300 font-mono">${item.bags} / ${item.km}</span>
+                    <span class="col-span-3 text-right font-black text-brand-emerald">${item.xp}</span>
                 `;
                 container.appendChild(row);
             });
         }
 
-        // Initialize leaderboard on load
-        filterLeaderboard('all');
+        // Unboxing Engine
+        function triggerUnboxing(tierName, cost) {
+            if (userState.coins < cost) {
+                alert('Nedostatek Green Coins! Použijte VIP Vývojářský Panel pro přidání peněz.');
+                return;
+            }
+
+            userState.coins -= cost;
+            updateUserUI();
+
+            const modal = document.getElementById('unboxing-modal');
+            const card = document.getElementById('unboxing-result-card');
+            const boxAnim = document.getElementById('unboxing-box-anim');
+
+            modal.classList.remove('hidden');
+            card.classList.add('hidden');
+            boxAnim.classList.add('animate-shake');
+
+            setTimeout(() => {
+                boxAnim.classList.remove('animate-shake');
+                card.classList.remove('hidden');
+                confetti({ particleCount: 100, spread: 80 });
+            }, 1500);
+        }
+
+        function closeUnboxingModal() {
+            document.getElementById('unboxing-modal').classList.add('hidden');
+        }
+
+        // Strava Import Simulation
+        function triggerStravaImportSim() {
+            confetti({ particleCount: 60, spread: 50 });
+            alert('Strava API: Načtena nová běžecká aktivita z Garmin hodinek! Připsáno +120 XP a automaticky extrahována GPX trasa.');
+        }
+
+        function simulatePhotoCapture() {
+            confetti({ particleCount: 40, spread: 40 });
+            alert('Fotografie pytle s odpadem ověřena přes GPS metadata (+150 XP). Pytel zanesen na mapu.');
+        }
+
+        function finishActivityAndAward() {
+            userState.xp += 350;
+            userState.coins += 100;
+            userState.bagsCount += 1;
+            userState.distanceKm += 3.4;
+            updateUserUI();
+            confetti({ particleCount: 120, spread: 90 });
+            alert('Aktivita dokončena! Získáváte +350 XP a +100 Green Coins.');
+            showTab('home');
+        }
+
+        // 150 Achievements Catalog Population
+        const achievementsList = [
+            { id: 1, title: "První krůček ke čistotě", desc: "Uběhni nebo ujdi svůj 1. kilometr", reward: "+50 XP, 10 Coins" },
+            { id: 2, title: "Pětka na rozcvičení", desc: "Překonej 5 km v jedné aktivitě", reward: "+100 XP, 25 Coins" },
+            { id: 3, title: "Desítkář", desc: "Pokoř 10 km na jeden zátah", reward: "+200 XP, 50 Coins" },
+            { id: 21, title: "Čistý začátek", desc: "Odevzdej a vyfoť svůj 1. pytel", reward: "+50 XP, 15 Coins" },
+            { id: 22, title: "Pětikačka", desc: "Naplň celkem 5 pytlů", reward: "+150 XP, 40 Coins" },
+            { id: 41, title: "První jiskra", desc: "Aktivity ve 2 dnech po sobě", reward: "+50 XP, 10 Coins" },
+            { id: 56, title: "Místní patriot", desc: "Odkryj 0.1 % mapy ČR", reward: "+100 XP, 25 Coins" },
+            { id: 150, title: "Absolutní Vládce Green Movement", desc: "Odkryj 25 % ČR, Level 100 a 500 pytlů", reward: "+25 000 XP, 10 000 Coins" }
+        ];
+
+        function filterAchievements(cat) {
+            const grid = document.getElementById('achievements-catalog-grid');
+            grid.innerHTML = '';
+
+            achievementsList.forEach(ach => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-2 hover:border-brand-emerald transition-all";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="text-xs font-bold text-white">#${ach.id} ${ach.title}</span>
+                        <span class="text-[10px] bg-brand-emerald/20 text-brand-lime px-2 py-0.5 rounded font-bold">${ach.reward}</span>
+                    </div>
+                    <p class="text-xs text-slate-400">${ach.desc}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Application OnLoad Initializer
+        window.onload = function() {
+            filterLeaderboard('week');
+            filterAchievements('all');
+            updateUserUI();
+        }
     </script>
 </body>
 </html>
